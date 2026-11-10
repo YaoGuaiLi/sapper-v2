@@ -1,0 +1,32 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # Every hour at minute 17 (UTC); GitHub may delay scheduled runs.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-master
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'YaoGuaiLi/sapper-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Merge upstream master without overwriting history
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: master
+        shell: bash
+        run: |
+          # The merge-upstream API preserves history and returns an error on conflict.
+          # Let gh's nonzero exit fail this run. Never reset or force-push.
+          gh api --method POST "repos/${REPO}/merge-upstream" \
+            -f branch="${BRANCH}"
